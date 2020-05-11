@@ -14,7 +14,7 @@ int main(){
 	{ 0 , -1 ,  0},
 	{ 0 ,  1 ,  0} };
 
-	Mat img = imread("C:/Users/lilia/github/Stairs_Steps_Detection/Stairs/s9.jpg", IMREAD_GRAYSCALE);
+	Mat img = imread("C:/Users/lilia/github/Stairs_Steps_Detection/Stairs/DB_1/13.jpg", IMREAD_GRAYSCALE);
 	//Si l'image ne charge pas on retourne une erreur
 	if (!img.data)
 	{
@@ -24,49 +24,47 @@ int main(){
 	cout << "Image loaded\n";
 	//Création de l'objet
 	img_processing i;
+
 	//Affichage des informations sur les niveaux de gris de l'image 
 	i.hist_info(img);
 
-	//Etape 1 : Application du filtre passe bas deux fois et affichage de l'image obtenue
-	Mat lpf = i.LPF(img);
-	lpf = i.LPF(lpf);
-	imshow("1", lpf);
-	
-	//Application d'un filtre qui extrait les contours horizontaux 
-	Mat hpf = i.LPF(lpf,mask);
-	imshow("2", hpf);
+	//Affichage de l'image
+	imshow("1_Image", img);
 
-	//Application d'un filtre median et affichage de l'image obtenue
-	medianBlur(hpf, hpf, 3);
-	imshow("3", hpf);
+	//Application du filtre passe bas et affichage de l'image obtenue
+	img = i.LPF(img);
+	imshow("2_Image filtre passe bas", img);
 
 	//Application d'un filtre qui extrait les contours horizontaux 
-	hpf = i.LPF(hpf, mask);
-	imshow("4", hpf);
+	img = i.LPF(img, mask);
+	imshow("3_Extraction des contours", img);
 
-	//Extraction des lignes horizontales
-	Mat horizontal = hpf.clone();
-	int horizontal_size = horizontal.cols / 30;
-	Mat horizontalStructure = getStructuringElement(MORPH_RECT, Size(horizontal_size, 1));
-	//Morph Operations
-	
-	erode(horizontal, horizontal, horizontalStructure, Point(-1, -1));
-	dilate(horizontal, horizontal, horizontalStructure, Point(-1, -1));
-
-	//Affichage du résultat
-	imshow("horizontal", horizontal);
-	
 	//Binarisation de l'image
-	Mat bin = i.Binary(horizontal, 50);
-	imshow("Binary", bin);
+	img = i.Binary(img, 50);
+	imshow("4_Binarisation", img);
+
+	//Closing : reduction du bruit sans détruire les éléments important 
+	dilate(img, img, getStructuringElement(MORPH_RECT, Size(10, 1)));
+	imshow("Dilatation 10*1", img);
+	erode(img, img, getStructuringElement(MORPH_RECT, Size(75, 1)));
+	imshow("Erosion 75*1", img);
+
+	//Dilatation pour eviter la perte d'élément lors de l'érosion de l'opening
+	dilate(img, img, getStructuringElement(MORPH_RECT, Size(15, 5)));
+	imshow("Dilatation 15*5", img);
+
+	//Opening
+	erode(img, img, getStructuringElement(MORPH_RECT, Size(35, 1)));
+	imshow("Erosion 35*1", img);
+	dilate(img, img, getStructuringElement(MORPH_RECT, Size(35, 10)));
+	imshow("Dilatation 35*10", img);
+
+	//On passe ce qui est à 255 à 0 sur les premieres et dernières lignes 
+	img = i.Del_rows(img);
+	imshow("Deleted rows", img);
 	
-	//Test des deux compteurs 
-	cout << "C2 Moyenne : "<<i.count_2(bin) << endl;
-	cout << "C1 Max : " <<i.count_1(bin) << endl;
+	//Comptage de marches
+	i.count_mean(img);
 	waitKey(0);
-
-
-
-
 	return 0;
 }

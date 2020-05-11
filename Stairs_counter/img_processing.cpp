@@ -19,7 +19,6 @@ vector<float> img_processing::hist_info(Mat img) {
 			if ((int)img.at<uchar>(i, j) > max) {
 				max = (int)img.at<uchar>(i, j);
 			}
-
 			grey_values[(int)img.at<uchar>(i, j)] = grey_values[(int)img.at<uchar>(i, j)] + 1;
 			if (grey_values[(int)img.at<uchar>(i, j)] > count_mode.first) {
 				count_mode.first = grey_values[(int)img.at<uchar>(i, j)];
@@ -28,7 +27,6 @@ vector<float> img_processing::hist_info(Mat img) {
 
 		}
 	}
-
 
 	mean = mean / counter;
 	//Calcule de l'écart type
@@ -40,12 +38,6 @@ vector<float> img_processing::hist_info(Mat img) {
 	}
 	float sd = sqrt(sxm / (counter - 1));
 
-	//Stockage des données
-	img_processing::Max = max;
-	img_processing::Min = min;
-	img_processing::Mode = count_mode.second;
-	img_processing::Mean = mean;
-	img_processing::SD = sd;
 	//Affichage des données
 	cout << "Mean : " << mean << "\nSD : " << sd << "\nMode : " << count_mode.second << "\nMax : " << max << "\nMin : " << min << endl;
 	//Renvoie des données
@@ -67,9 +59,26 @@ Mat img_processing::Binary(Mat img, int threshold) {
 			}
 		}
 	}
-
 	//Renvoie l'image binaire
 	return binary;
+}
+
+Mat img_processing::Del_rows(Mat img) {
+	//Creation d'une image binary de la meme taille que l'image passée en paramètre
+	Mat deleted(img.rows, img.cols, CV_8UC1, Scalar(70));
+
+	//On met les 5 premier et derniere rangee a 0 
+	for (int i = 0; i < deleted.rows; i++) {
+		for (int j = 0; j < deleted.cols; j++) {
+			if(i<10 or i>deleted.rows-10){
+				deleted.at<uchar>(i, j) = 0;
+			}
+			else {
+				deleted.at<uchar>(i, j) = img.at<uchar>(i, j);
+			}
+		}
+	}
+	return deleted;
 }
 
 Mat img_processing::LPF(Mat img, vector<vector<int>> filter) {
@@ -94,29 +103,7 @@ Mat img_processing::LPF(Mat img, vector<vector<int>> filter) {
 	return img_lpf;
 }
 
-
-Mat img_processing::HPF(Mat img, vector<vector<int>> filter) {
-	//Création d'une image identique avec  bordures répliqués
-	int border = 1;
-	Mat img_hpf(img.rows + border * 2, img.cols + border * 2, CV_8UC1, Scalar(70));
-	copyMakeBorder(img, img_hpf, border, border, border, border, BORDER_REPLICATE);
-
-	//Application du filtre pour chaques pixels de l'image avec les bordures répliquées
-	for (int i = 0 + trunc(filter.size() / 2); i < img_hpf.rows - trunc(filter.size() / 2); i++) {
-		for (int j = 0 + trunc(filter.size() / 2); j < img_hpf.cols - trunc(filter.size() / 2); j++) {
-			//Application du filtre : 
-			img_hpf.at<uchar>(i, j) =
-				((int)img_hpf.at<uchar>(i - 1, j - 1) * filter[0][0]) / 9 + ((int)img_hpf.at<uchar>(i - 1, j) * filter[0][1]) / 9 + ((int)img_hpf.at<uchar>(i - 1, j + 1) * filter[0][2]) / 9
-				+ ((int)img_hpf.at<uchar>(i, j - 1) * filter[1][0]) / 9 + ((int)img_hpf.at<uchar>(i, j) * filter[1][1]) / 9 + ((int)img_hpf.at<uchar>(i, j + 1) * filter[1][2]) / 9
-				+ ((int)img_hpf.at<uchar>(i + 1, j - 1) * filter[2][0]) / 9 + ((int)img_hpf.at<uchar>(i + 1, j) * filter[2][1] + ((int)img_hpf.at<uchar>(i + 1, j + 1) * filter[2][2]) / 9);
-		}
-	}
-
-	//Renvoie l'image sur laquelle le filtre a été appliqué 
-	return img_hpf;
-}
-
-Mat img_processing::DC_DFT(Mat img) {
+/*Mat img_processing::DC_DFT(Mat img) {
 	//On prend la DFT de l'image en paramètre
 	Mat originalFloat;
 	img.convertTo(originalFloat, CV_32FC1, 1.0 / 255.0);
@@ -155,7 +142,7 @@ Mat img_processing::DC_DFT(Mat img) {
 	//Affichage de la DFT convertit et recentrée
 	imshow("DFT", dftMagnitude);
 	//waitKey(0);
-	
+
 	//Supression de lignes verticales de la DFT
 	for (int i = 0; i < dftMagnitude.rows; i++) {
 		for (int j = 0; j < dftMagnitude.cols; j++) {
@@ -178,39 +165,26 @@ Mat img_processing::DC_DFT(Mat img) {
 	return invertedDFT;
 }
 
+*/
 
-int img_processing::count_1(Mat img) {
-	vector<int> counters_col(img.cols, 0);
-	
-	//Comptage des variations pour chaques colonnes de pixels
-	for (int i = 0; i < img.cols; i++) {
-		int px_prec = (int)img.at<uchar>(0, i);
-		for (int j = 0; j < img.rows; j++) {
 
-			int px = (int)img.at<uchar>(j, i);
-			if (px != px_prec) {
-				counters_col[i] = counters_col[i] + 1;
-			}
-			px_prec = px;
+int img_processing::count_lines(Mat img) {
+	int counter_lines = 0;
+	//Comptage des variations pour la première colonne de pixel
+	int px_prec = 0;
+	for (int j = 0; j < img.rows; j++) {
+		int px = (int)img.at<uchar>(j, 0);
+		if (px != px_prec && px == 255) {
+			counter_lines = counter_lines + 1;
 		}
+		px_prec = px;
 	}
-
-	//Renvoie du maximum de variations pour la colonne concernée
-	int max = *max_element(counters_col.begin(), counters_col.end());
-	int number_of_steps = round(max / 2);
-	return number_of_steps;
+	return counter_lines;
 }
 
-int img_processing::count_2(Mat img) {
-	//TODO changer le comptage, compter sur 3 ou 4 rangées de pixels au lieu d'une seule : voir pseudo code et schémas 
-
-	//Seuil de différence entre deux moyenne pour savoir si on compte ou non
-	int threshold = 5;
-	//Initialisation a -1 car mean_prec est initialisée a -1, donc on aura forcément une variation 
-	//car on ne peut pas avoir de moyenne négatif pour une rangée car les pixels de l'image en niveau de gris n'ont pas de valeurs négatives
-	int counter = -1;
-	int mean_prec = -1+threshold;//+threshold ???
-
+int img_processing::count_mean(Mat img) {
+	//Calcule des moyennes pour 10 rangées
+	vector<int> means;
 	for (int j = 0; j < img.rows; j++) {
 		int sum_row_i = 0;
 		//Moyenne de la rangée
@@ -218,17 +192,97 @@ int img_processing::count_2(Mat img) {
 			sum_row_i = sum_row_i + (int)img.at<uchar>(j, i);
 		}
 		int mean_row_i = sum_row_i / img.cols;
-		//On ajoute si l'écart entre la moyenne et l'ancienne moyenne est supérieur au seuil
-		if (mean_row_i - mean_prec>threshold and mean_row_i>255*0.039 and mean_row_i<255*0.5) {
-			counter = counter + 1;
-			cout << mean_row_i << endl;
+		means.push_back(mean_row_i);
+	}
+	int counter = 0;
+	int mean_all = 0;
+	vector<int> means_10;
+	for (int i = 5; i < means.size() - 5; i++) {
+		int means_10_i = 0;
+		for (int j = -5; j < 5; j++) {
+			means_10_i = means_10_i + means[i + j];
 		}
-		mean_prec = mean_row_i;
+		means_10_i = means_10_i / 10;
+		if (means_10_i != 0) {
+			counter = counter + 1;
+			mean_all = mean_all + means_10_i;
+		}
+		means_10.push_back(means_10_i);
+	}
+	mean_all = mean_all / counter;
+
+	//Affichage des moyennes
+	for (int i = 0; i < means_10.size(); i++) {
+		cout << means_10[i] << endl;
 	}
 
-	//On division le nombre de variation par deux pour obtenir le nombre de marche car une marche est représenté par deux variations, 
-	//pour la limite de la contre marche en blanc, et la marche en noir
-	int number_of_steps = round(counter / 2);
-	return counter;
+	//Calcule et affichage de la moyenne, du sd et du mode
+	float mean = 0;
+	int counter_0 = 0;
+	pair<int, int> count_mode = make_pair(-1, -1);
+	vector<int> grey_values(256, 0);
+	for (int j = 0; j < means_10.size(); j++) {
+		if (means_10[j] != 0) {
+			counter_0 = counter_0 + 1;
+			mean = mean + means_10[j];
+			grey_values[means_10[j]] = grey_values[means_10[j]] + 1;
+			if (grey_values[means_10[j]] > count_mode.first) {
+				count_mode.first = grey_values[means_10[j]];
+				count_mode.second = means_10[j];
+			}
+		}
+	}
+	mean = mean / counter_0;
+	float sxm;
+	for (int j = 0; j < means_10.size(); j++) {
+		if (means_10[j] != 0) {
+			sxm = (means_10[j] * mean) * (means_10[j] * mean);
+		}
+	}
+	float sd = sqrt(sxm / (counter_0 - 1));
+	cout << "Mean : " << mean << "\nSD : " << sd << "\nMode : " << count_mode.second << endl;
+
+	//Comptage de marche
+	int steps = 0;
+	if (sd > 10 || count_mode.second > 250) { //*mean *0.5mean
+		//Methode 1, on utilie la moyenne et 0.5*moyenne comme seuil
+		cout << "FIRST METHODE \n";
+		bool passed_by_low = true;
+		for (int i = 0; i < means_10.size(); i++) {
+			if (means_10[i] > mean_all * 1 && passed_by_low == true) {
+				steps = steps + 1;
+				passed_by_low = false;
+			}
+			if (means_10[i] < mean_all * 0.5) {
+				passed_by_low = true;
+			}
+		}
+	}
+	if (sd < 10 || sd == 10) {
+		if (count_mode.second > 9 && count_mode.second<250) { //*mode *?mode
+			cout << "Second METHODE \n";
+			//Methode 2, on utilise le mode comme seuil
+			bool passed_by_low = true;
+			for (int i = 0; i < means_10.size(); i++) {
+				if (means_10[i] > count_mode.second * 1 && passed_by_low == true) {
+					steps = steps + 1;
+					passed_by_low = false;
+				}
+				if (means_10[i] < count_mode.second * 1 || means_10[i] == count_mode.second * 1) {
+					passed_by_low = true;
+				}
+			}
+		}
+		if (count_mode.second < 9 || count_mode.second ==9) {
+			cout << "Third METHODE \n";
+			//Methode 3 on compte les lignes 
+			Mat img_lines;
+			dilate(img, img_lines, getStructuringElement(MORPH_RECT, Size((img.cols * 20), 1)));
+			imshow("Lines to count", img_lines);
+			steps = this->count_lines(img_lines);
+		}
+	}
+	cout << "\nSTEPS: " << steps;
+	return 0;
 }
 
