@@ -278,7 +278,7 @@ int img_processing::count_mean(Mat img) {
 			//Methode 3 on compte les lignes 
 			Mat img_lines;
 			dilate(img, img_lines, getStructuringElement(MORPH_RECT, Size((img.cols * 20), 1)));
-			imshow("Lines to count", img_lines);
+			imshow("11_Lines to count", img_lines);
 			steps = this->count_lines(img_lines);
 		}
 	}
